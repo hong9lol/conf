@@ -1,0 +1,27 @@
+# 가상환경 디렉토리
+venv/
+.venv/
+
+# Python 캐시 파일
+__pycache__/
+*.pyc
+*.pyo
+
+# 환경변수 파일 (API 키, 비밀번호 등 민감정보)
+.env
+
+# Confluence 백업 데이터
+confluence_backup.json
+
+# Confluence 페이지 저장 디렉토리
+confluence_pages/
+
+# Confluence 벡터 데이터베이스
+confluence_vectordb/
+
+# 로그 디렉토리 및 로그 파일
+logs/
+*.log
+
+# 백업 디렉토리
+backups/

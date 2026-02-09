@@ -1,0 +1,102 @@
+# ============================================
+# Confluence AI 검색 시스템 Docker Compose
+# ============================================
+# 사용법:
+#   docker compose up -d              # 전체 서비스 시작
+#   docker compose up confluence-ai   # AI 검색만 시작 (Ollama는 호스트에서 실행)
+#   docker compose logs -f            # 로그 확인
+#   docker compose down               # 전체 서비스 중지
+# ============================================
+
+services:
+  # ==========================================
+  # Confluence AI 검색 서비스 (메인 애플리케이션)
+  # ==========================================
+  confluence-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: confluence-ai-search
+    # Gradio 웹 UI 포트
+    ports:
+      - "7860:7860"
+    environment:
+      # 컨테이너에서 호스트의 Ollama에 접근하기 위한 주소
+      # Docker Desktop: host.docker.internal
+      # Linux: 호스트 IP 직접 지정 필요
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    # .env 파일에서 나머지 환경변수 로드
+    # (CONFLUENCE_BASE_URL, USERNAME, PASSWORD 등)
+    env_file:
+      - .env
+    volumes:
+      # 크롤링된 페이지 (컨테이너 재시작 후에도 유지)
+      - ./confluence_pages:/app/confluence_pages
+      # 벡터 DB (컨테이너 재시작 후에도 유지)
+      - ./confluence_vectordb:/app/confluence_vectordb
+      # 로그 파일
+      - ./logs:/app/logs
+      # 백업 디렉토리
+      - ./backups:/app/backups
+      # 데이터 파일 (호스트와 공유)
+      - ./confluence_backup.json:/app/confluence_backup.json
+      - ./last_sync.json:/app/last_sync.json
+      - ./processed_chunks.json:/app/processed_chunks.json
+    # 비정상 종료 시 자동 재시작 (수동 중지 제외)
+    restart: unless-stopped
+    # Ollama 서비스가 먼저 시작되도록 (선택사항)
+    depends_on:
+      ollama:
+        condition: service_started
+        required: false  # Ollama가 없어도 시작 가능
+    # Gradio 서버 응답 확인
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/"]
+      interval: 30s      # 30초마다 확인
+      timeout: 10s       # 10초 내 응답 없으면 실패
+      start_period: 30s  # 시작 후 30초 유예
+      retries: 3         # 3회 실패 시 unhealthy
+    networks:
+      - confluence-net
+
+  # ==========================================
+  # Ollama LLM 서버 (선택사항)
+  # 호스트에 이미 Ollama가 설치된 경우 이 서비스는 불필요
+  # ==========================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    # Ollama API 포트
+    ports:
+      - "11434:11434"
+    volumes:
+      # 모델 데이터 영구 저장 (다운로드한 모델 유지)
+      - ollama_data:/root/.ollama
+    # 비정상 종료 시 자동 재시작
+    restart: unless-stopped
+    # GPU 지원 (NVIDIA GPU가 있는 경우)
+    # GPU가 없으면 이 섹션을 주석 처리하세요
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1                # GPU 1개 사용
+    #           capabilities: [gpu]     # GPU 연산 기능 활성화
+    networks:
+      - confluence-net
+
+# ==========================================
+# 볼륨 정의
+# ==========================================
+volumes:
+  # Ollama 모델 데이터 (다운로드한 LLM 모델 영구 보관)
+  ollama_data:
+    driver: local
+
+# ==========================================
+# 네트워크 정의
+# ==========================================
+networks:
+  confluence-net:
+    driver: bridge

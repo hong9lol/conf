@@ -1,0 +1,56 @@
+# ============================================
+# Docker 빌드 제외 파일
+# 이미지 크기 최소화 및 보안을 위해 불필요한 파일 제외
+# ============================================
+
+# --- Python 가상환경 (컨테이너 내부에서 별도 생성) ---
+venv/
+.venv/
+
+# --- Python 캐시 (런타임에 자동 생성됨) ---
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Git 관련 (소스 이력 불필요) ---
+.git/
+.gitignore
+
+# --- 환경변수 (민감정보 보호, docker-compose에서 주입) ---
+.env
+
+# --- 크롤링 데이터 (볼륨 마운트로 관리) ---
+confluence_pages/
+confluence_backup.json
+processed_chunks.json
+last_sync.json
+
+# --- 벡터 DB (볼륨 마운트로 관리, 크기가 큼) ---
+confluence_vectordb/
+
+# --- 로그 (볼륨 마운트로 관리) ---
+logs/
+*.log
+
+# --- 백업 (볼륨 마운트로 관리) ---
+backups/
+
+# --- 테스트 캐시 (프로덕션에 불필요) ---
+.pytest_cache/
+
+# --- IDE 설정 (개발 도구 설정) ---
+.vscode/
+.idea/
+
+# --- 문서 파일 (런타임에 불필요) ---
+README.md
+*.md
+LICENSE
+
+# --- 빌드 진행 상황 파일 ---
+.vectordb_progress.json
+
+# --- Docker 관련 (재귀 방지) ---
+Dockerfile
+docker-compose.yml
+docker-compose*.yml
