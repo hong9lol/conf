@@ -363,7 +363,9 @@ class ConfluenceCrawler:
                 "[data-testid='children-item'] a, "
                 ".childpages-macro a"
             )
-
+            print("=============================")
+            print(child_links)
+            print("=============================")
             for link in child_links:
                 href = link.get_attribute("href")
                 title = link.inner_text().strip()
@@ -593,10 +595,10 @@ class ConfluenceCrawler:
 
     def close(self):
         """브라우저 및 Playwright 리소스 정리"""
-        if self.browser:
-            self.browser.close()
-        if self.playwright:
-            self.playwright.stop()
+        # if self.browser:
+        #     self.browser.close()
+        # if self.playwright:
+        #     self.playwright.stop()
 
     def run(self):
         """전체 크롤링 프로세스 실행
@@ -618,8 +620,10 @@ class ConfluenceCrawler:
             init_sync_state()
 
             # 로그인
-            self.login()
-
+            # self.login()
+            self.playwright = sync_playwright().start()
+            self.browser = self.playwright.chromium.launch(headless=True)
+            self.page = self.browser.new_page()
             # 루트 페이지부터 재귀 크롤링
             console.print(f"\n[bold]루트 페이지: {self.root_page_url}[/bold]\n")
             self.crawl_page(self.root_page_url)

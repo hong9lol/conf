@@ -1,0 +1,95 @@
+{
+  "last_full_sync": "2026-02-10T23:16:10.252619",
+  "last_incremental_sync": "2026-02-10T08:09:54.156426",
+  "total_pages": 2,
+  "pages": {
+    "31415781": {
+      "title": "Facilities IT",
+      "url": "https://uci.atlassian.net/wiki/spaces/public/pages/31415781/Facilities+IT",
+      "version": 0,
+      "last_modified": "",
+      "last_crawled": "2026-02-10T22:45:25.363959"
+    },
+    "31415841": {
+      "title": "Facilities Start Page - Work in Progress!",
+      "url": "https://uci.atlassian.net/wiki/spaces/public/pages/31415841/Facilities+Start+Page+-+Work+in+Progress",
+      "version": 0,
+      "last_modified": "",
+      "last_crawled": "2026-02-10T23:16:10.244591"
+    }
+  },
+  "sync_history": [
+    {
+      "timestamp": "2026-02-10T01:33:55.132299",
+      "type": "incremental",
+      "added": 0,
+      "modified": 0,
+      "deleted": 0,
+      "skipped": 0,
+      "failed": 1
+    },
+    {
+      "timestamp": "2026-02-10T01:42:02.737793",
+      "type": "incremental",
+      "added": 1,
+      "modified": 0,
+      "deleted": 0,
+      "skipped": 0,
+      "failed": 0
+    },
+    {
+      "timestamp": "2026-02-10T08:03:48.588572",
+      "type": "incremental",
+      "added": 0,
+      "modified": 1,
+      "deleted": 0,
+      "skipped": 0,
+      "failed": 0
+    },
+    {
+      "timestamp": "2026-02-10T08:05:13.178477",
+      "type": "incremental",
+      "added": 0,
+      "modified": 1,
+      "deleted": 0,
+      "skipped": 0,
+      "failed": 0
+    },
+    {
+      "timestamp": "2026-02-10T08:06:49.872775",
+      "type": "incremental",
+      "added": 0,
+      "modified": 1,
+      "deleted": 0,
+      "skipped": 0,
+      "failed": 0
+    },
+    {
+      "timestamp": "2026-02-10T08:09:54.156338",
+      "type": "incremental",
+      "added": 0,
+      "modified": 1,
+      "deleted": 0,
+      "skipped": 0,
+      "failed": 0
+    },
+    {
+      "timestamp": "2026-02-10T22:45:25.372122",
+      "type": "full",
+      "added": 0,
+      "modified": 1,
+      "deleted": 0,
+      "skipped": 0,
+      "failed": 0
+    },
+    {
+      "timestamp": "2026-02-10T23:16:10.252550",
+      "type": "full",
+      "added": 1,
+      "modified": 0,
+      "deleted": 0,
+      "skipped": 0,
+      "failed": 0
+    }
+  ]
+}

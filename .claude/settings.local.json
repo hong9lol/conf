@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c:*)",
+      "Bash(python3 -m venv:*)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(ls:*)",
+      "Bash(./manager.sh:*)",
+      "Bash(curl:*)",
+      "Bash(xattr:*)",
+      "Bash(python3:*)",
+      "Bash(ollama show:*)",
+      "Bash(ollama --version:*)",
+      "Bash(pkill:*)",
+      "Bash(pgrep:*)",
+      "Bash(ollama list:*)",
+      "Bash(ollama run:*)"
+    ]
+  }
+}

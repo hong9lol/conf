@@ -92,7 +92,7 @@ def search_interface(query: str) -> str:
             "2. **Ollama 서버 실행 여부**\n"
             "   ```bash\n"
             "   ollama serve\n"
-            "   ollama pull eeve-korean-10.8b\n"
+            "   ollama pull anpigon/eeve-korean-10.8b\n"
             "   ```"
         )
 

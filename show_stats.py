@@ -6,18 +6,25 @@ JSON 내보내기 및 파일 저장을 지원합니다.
 """
 
 import json
+import os
 import platform
 import shutil
+import socket
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
 
 import click
+import requests
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
 from sync_state import load_sync_state
+
+load_dotenv()
 
 console = Console()
 
@@ -267,14 +274,94 @@ def display_vectordb_stats(stats: dict):
     console.print(table)
 
 
-def display_search_stats():
-    """검색 통계 (구현 예정) 플레이스홀더"""
-    table = Table(title="검색 통계", show_header=True, header_style="bold cyan")
-    table.add_column("항목", style="bold")
-    table.add_column("값", justify="right")
+def get_service_status() -> dict:
+    """서비스 실행 상태 수집
 
-    table.add_row("오늘 검색 수", "[dim]구현 예정[/dim]")
-    table.add_row("인기 검색어", "[dim]구현 예정[/dim]")
+    Returns:
+        서비스 상태 딕셔너리
+    """
+    status = {
+        "ollama": {"running": False, "host": "", "model": ""},
+        "gradio": {"running": False, "port": 0},
+    }
+
+    # Ollama 상태 확인
+    ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    ollama_model = os.getenv("OLLAMA_MODEL", "eeve-korean-10.8b")
+    status["ollama"]["host"] = ollama_host
+    status["ollama"]["model"] = ollama_model
+
+    try:
+        resp = requests.get(f"{ollama_host}/api/tags", timeout=3)
+        if resp.status_code == 200:
+            status["ollama"]["running"] = True
+            # 모델 설치 여부 확인 (ollama list 명령어 사용 - API 호환성 대응)
+            try:
+                env = {k: v for k, v in os.environ.items() if k != "OLLAMA_HOST"}
+                result = subprocess.run(
+                    ["ollama", "list"],
+                    capture_output=True, text=True, timeout=10, env=env,
+                )
+                model_names = []
+                for line in result.stdout.strip().split("\n")[1:]:
+                    if line.strip():
+                        model_names.append(line.split()[0].split(":")[0])
+                status["ollama"]["model_installed"] = ollama_model in model_names
+            except Exception:
+                status["ollama"]["model_installed"] = False
+        else:
+            status["ollama"]["model_installed"] = False
+    except Exception:
+        status["ollama"]["model_installed"] = False
+
+    # Gradio UI 상태 확인 (포트 체크)
+    gradio_port = int(os.getenv("GRADIO_SERVER_PORT", "7860"))
+    status["gradio"]["port"] = gradio_port
+
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        result = sock.connect_ex(("localhost", gradio_port))
+        status["gradio"]["running"] = result == 0
+        sock.close()
+    except Exception:
+        pass
+
+    return status
+
+
+def display_service_status(status: dict):
+    """서비스 상태 테이블 출력"""
+    table = Table(title="서비스 상태", show_header=True, header_style="bold cyan")
+    table.add_column("서비스", style="bold")
+    table.add_column("상태", justify="center")
+    table.add_column("상세", justify="right")
+
+    # Ollama
+    ollama = status["ollama"]
+    if ollama["running"]:
+        ollama_status = "[green]실행 중[/green]"
+        model_info = ollama["host"]
+        if ollama.get("model_installed"):
+            model_info += f" | {ollama['model']} [green](설치됨)[/green]"
+        else:
+            model_info += f" | {ollama['model']} [yellow](미설치)[/yellow]"
+    else:
+        ollama_status = "[red]중지됨[/red]"
+        model_info = f"[dim]{ollama['host']}[/dim]"
+
+    table.add_row("Ollama LLM", ollama_status, model_info)
+
+    # Gradio
+    gradio = status["gradio"]
+    if gradio["running"]:
+        gradio_status = "[green]실행 중[/green]"
+        gradio_info = f"http://localhost:{gradio['port']}"
+    else:
+        gradio_status = "[dim]중지됨[/dim]"
+        gradio_info = f"[dim]포트 {gradio['port']}[/dim]"
+
+    table.add_row("Gradio UI", gradio_status, gradio_info)
 
     console.print(table)
 
@@ -290,6 +377,7 @@ def collect_all_stats() -> dict:
         "system": get_system_info(),
         "crawl": get_crawl_stats(),
         "vectordb": get_vectordb_stats(),
+        "services": get_service_status(),
     }
 
 
@@ -358,8 +446,8 @@ def main(as_json: bool, export_path: str | None):
     display_vectordb_stats(all_stats["vectordb"])
     console.print()
 
-    # 4. 검색 통계 (구현 예정)
-    display_search_stats()
+    # 4. 서비스 상태
+    display_service_status(all_stats["services"])
     console.print()
 
 

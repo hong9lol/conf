@@ -1,384 +1,275 @@
-# 🔍 Confluence AI 검색 시스템
+# Confluence AI 검색 시스템
 
-Confluence 문서를 자동으로 크롤링하고, RAG(Retrieval-Augmented Generation) 기반으로
-자연어 질의응답을 제공하는 AI 검색 시스템입니다.
-
-## 📋 목차
-
-- [프로젝트 개요](#-프로젝트-개요)
-- [요구사항](#-요구사항)
-- [설치 가이드](#-설치-가이드)
-- [설정](#-설정)
-- [사용법](#-사용법)
-- [스크립트 설명](#-스크립트-설명)
-- [문제 해결](#-문제-해결)
-- [개발 가이드](#-개발-가이드)
-- [라이센스](#-라이센스)
-- [향후 개선사항](#-향후-개선사항)
-
----
-
-## 🎯 프로젝트 개요
-
-### 목적
-
-팀의 Confluence 문서가 방대해지면서 원하는 정보를 찾기 어려운 문제를 해결합니다.
-AI가 문서를 이해하고, 자연어 질문에 대해 정확한 답변과 출처를 제공합니다.
-
-### 주요 기능
-
-- 🕷️ **자동 크롤링**: Playwright를 이용한 Confluence 페이지 자동 수집
-- 🔄 **증분 업데이트**: 변경된 페이지만 감지하여 효율적으로 업데이트
-- 🧠 **RAG 검색**: 벡터 유사도 검색 + LLM 답변 생성
-- 🌐 **웹 UI**: Gradio 기반 직관적인 검색 인터페이스
-- 🐳 **Docker 지원**: 원클릭 배포 및 운영
-
-### 아키텍처
+Confluence 위키 페이지를 자동 수집하고, 벡터 DB에 저장하여
+자연어로 질문하면 관련 문서를 찾아 AI가 답변하는 RAG 시스템입니다.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    사용자 (웹 브라우저)                      │
-│                   http://localhost:7860                   │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────────────────┐
-│                  Gradio 웹 UI (app.py)                    │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────────────────┐
-│              RAG 검색 엔진 (rag_search.py)                │
-│                                                          │
-│   ┌─────────────┐    ┌──────────┐    ┌───────────────┐  │
-│   │  임베딩 모델  │    │ ChromaDB │    │  Ollama LLM   │  │
-│   │ ko-sroberta  │───▶│ 벡터 검색 │───▶│ 답변 생성      │  │
-│   └─────────────┘    └──────────┘    └───────────────┘  │
-└──────────────────────────────────────────────────────────┘
-
-┌──────────────────── 데이터 파이프라인 ─────────────────────┐
-│                                                          │
-│  Confluence ──▶ 크롤러 ──▶ 전처리 ──▶ 임베딩 ──▶ ChromaDB │
-│  (웹 페이지)   (Playwright) (청크분할) (벡터변환) (벡터저장)  │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│                    사용자 질문                        │
+│               "배포 절차가 어떻게 돼?"                 │
+└───────────────┬─────────────────────────────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│        Gradio 웹 UI          │  ← app.py (포트 7860)
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│    RAG 검색 엔진              │  ← rag_search.py
+│  ┌──────────┐  ┌───────────┐ │
+│  │ 벡터 검색 │  │  LLM 응답  │ │
+│  │ ChromaDB │  │  Ollama   │ │
+│  └──────────┘  └───────────┘ │
+└───────────────────────────────┘
+                ▲
+                │ 데이터 파이프라인
+┌───────────────┴───────────────┐
+│  크롤링 → 전처리 → 벡터화     │
+│  Playwright   Chunk   Embed  │
+└───────────────────────────────┘
 ```
 
----
+## 요구사항
 
-## 📦 요구사항
+| 항목 | 최소 요구사항 |
+|------|-------------|
+| Python | 3.8 이상 (3.11+ 권장) |
+| OS | macOS / Linux / Windows (WSL) |
+| RAM | 8GB 이상 (임베딩 모델 로드용) |
+| 디스크 | 5GB 이상 여유 공간 |
+| Ollama | 설치 및 모델 다운로드 필요 |
 
-### Python 버전
+## 빠른 시작
 
-- **Python 3.11** 이상
-
-### 시스템 요구사항
-
-| 항목 | 최소 | 권장 |
-|------|------|------|
-| RAM | 8GB | 16GB |
-| 디스크 | 10GB | 20GB |
-| GPU | 불필요 | NVIDIA (VRAM 8GB+) |
-
-### 필수 서비스
-
-- **Ollama**: 로컬 LLM 서버
-  ```bash
-  # macOS
-  brew install ollama
-
-  # Linux
-  curl -fsSL https://ollama.com/install.sh | sh
-
-  # 모델 다운로드
-  ollama pull eeve-korean-10.8b
-  ```
-
----
-
-## 🚀 설치 가이드
-
-### 방법 1: 로컬 설치
+### 1. 최초 설정
 
 ```bash
-# 1. 저장소 클론
+# 프로젝트 클론
 git clone <repository-url>
 cd confluence
 
-# 2. 가상환경 생성 및 활성화
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+# 자동 설정 (가상환경 + 패키지 + Playwright)
+./manager.sh setup
 
-# 3. 의존성 설치
-pip install -r requirements.txt
+# .env 파일 편집 (Confluence 접속 정보 입력)
+vim .env
 
-# 4. Playwright 브라우저 설치
-playwright install chromium
+# Ollama LLM 모델 다운로드
+ollama serve                      # 터미널 1
+ollama pull eeve-korean-10.8b     # 터미널 2
 
-# 5. 환경변수 설정
-cp .env.template .env
-# .env 파일을 편집하여 실제 값 입력
+# 환경 점검
+./manager.sh check
 ```
 
-### 방법 2: Docker 설치
+### 2. 최초 데이터 구축
 
 ```bash
-# 1. 환경변수 설정
-cp .env.template .env
-# .env 파일 편집
-
-# 2. 빌드 및 실행
-./docker_manager.sh build
-./docker_manager.sh start
-
-# 또는 docker compose 직접 사용
-docker compose up -d
+# 전체 크롤링 → 전처리 → 벡터 DB 구축
+./manager.sh full-update
 ```
 
----
-
-## ⚙️ 설정
-
-### .env 파일 설정
+### 3. 검색 UI 시작
 
 ```bash
-cp .env.template .env
+# Gradio 웹 UI 시작 (백그라운드)
+./manager.sh start
+
+# 브라우저에서 접속
+# http://localhost:7860
 ```
 
-`.env` 파일을 열고 다음 값을 입력하세요:
-
-```env
-# Confluence 접속 정보 (필수)
-CONFLUENCE_BASE_URL=https://your-company.atlassian.net/wiki
-CONFLUENCE_USERNAME=your-email@company.com
-CONFLUENCE_PASSWORD=your-api-token
-
-# 크롤링 시작 페이지 (필수)
-ROOT_PAGE_URL=https://your-company.atlassian.net/wiki/spaces/TEAM/pages/123456/Root
-
-# Ollama 설정
-OLLAMA_HOST=http://localhost:11434
-OLLAMA_MODEL=eeve-korean-10.8b
-```
-
-### Confluence 접근 권한
-
-1. [Atlassian API 토큰](https://id.atlassian.com/manage-profile/security/api-tokens) 생성
-2. `CONFLUENCE_PASSWORD`에 API 토큰 입력 (비밀번호가 아닌 토큰 사용)
-3. 크롤링할 페이지의 읽기 권한이 있는지 확인
-
----
-
-## 📖 사용법
-
-### 최초 실행 (전체 구축)
-
-```bash
-# 1. Ollama 시작
-ollama serve
-
-# 2. 전체 파이프라인 실행
-python weekly_update.py --full
-```
-
-이 명령은 다음을 순차적으로 수행합니다:
-1. 환경 확인
-2. Confluence 전체 크롤링
-3. 데이터 전처리 (청크 분할)
-4. 벡터 DB 구축
-5. 결과 통계 출력
-
-### 주간 업데이트 (증분)
+### 4. 주간 운영
 
 ```bash
 # 변경된 페이지만 업데이트
-python weekly_update.py
+./manager.sh update
 
-# 또는 Docker 환경에서
-./docker_manager.sh update
+# 통계 확인
+./manager.sh stats
+
+# 데이터 백업
+./manager.sh backup
 ```
 
-### 검색 사용
+## 환경 설정 (.env)
+
+`.env.template`을 `.env`로 복사하고 실제 값을 입력합니다.
+
+| 변수 | 설명 | 예시 |
+|------|------|------|
+| `CONFLUENCE_BASE_URL` | Confluence 기본 URL | `https://company.atlassian.net/wiki` |
+| `CONFLUENCE_USERNAME` | 로그인 이메일 | `user@company.com` |
+| `CONFLUENCE_PASSWORD` | API 토큰 또는 비밀번호 | `xxxxxxxxxxx` |
+| `ROOT_PAGE_URL` | 크롤링 시작 페이지 URL | `https://company.atlassian.net/wiki/spaces/TEAM/pages/123456/Root` |
+| `OLLAMA_HOST` | Ollama 서버 주소 | `http://localhost:11434` |
+| `OLLAMA_MODEL` | LLM 모델명 | `eeve-korean-10.8b` |
+| `GRADIO_SERVER_PORT` | 웹 UI 포트 | `7860` |
+| `LOG_LEVEL` | 로그 레벨 | `INFO` |
+
+## 관리 스크립트 (manager.sh)
+
+모든 작업은 `./manager.sh` 명령어 하나로 관리합니다.
 
 ```bash
-# 웹 UI 시작
-python app.py
-# 브라우저에서 http://localhost:7860 접속
-
-# 또는 Docker 환경에서
-./docker_manager.sh start
+./manager.sh [명령어]
 ```
 
-### 통계 확인
+### 설정
 
-```bash
-python show_stats.py              # 대시보드
-python show_stats.py --json       # JSON 출력
-```
+| 명령어 | 설명 |
+|--------|------|
+| `setup` | 최초 설정 (가상환경, 패키지, Playwright 설치) |
+| `check` | 환경 상태 확인 (.env, Ollama, 벡터DB, Gradio) |
 
----
+### 서비스
 
-## 📜 스크립트 설명
+| 명령어 | 설명 |
+|--------|------|
+| `start` | Gradio 웹 UI 시작 (백그라운드, PID 관리) |
+| `stop` | Gradio 웹 UI 중지 |
+| `restart` | Gradio 웹 UI 재시작 |
 
-| 스크립트 | 용도 | 실행 방법 |
+### 데이터
+
+| 명령어 | 설명 |
+|--------|------|
+| `update` | 증분 업데이트 (변경된 페이지만 처리) |
+| `full-update` | 전체 재구축 (크롤링부터 벡터DB까지) |
+| `stats` | 시스템 통계 대시보드 (Rich 테이블) |
+
+### 유지보수
+
+| 명령어 | 설명 |
+|--------|------|
+| `test` | 테스트 실행 (pytest) |
+| `backup` | 벡터DB + 동기화 상태 백업 (tar.gz + SHA256) |
+| `restore FILE` | 백업 파일에서 복구 |
+| `cleanup` | 캐시, 오래된 로그, 임시 파일 정리 |
+
+## 전체 스크립트 목록
+
+| 스크립트 | 설명 | 직접 실행 |
 |----------|------|-----------|
-| `confluence_crawler.py` | Confluence 페이지 크롤링 | `python confluence_crawler.py [--full]` |
-| `sync_state.py` | 동기화 상태 관리 유틸리티 | (다른 스크립트에서 import) |
-| `preprocess_data.py` | 데이터 전처리 (청크 분할) | `python preprocess_data.py [--chunk-size 1000]` |
-| `build_vectordb.py` | 벡터 DB 구축 | `python build_vectordb.py [--rebuild]` |
-| `update_vectordb.py` | 벡터 DB 증분 업데이트 | `python update_vectordb.py [--force]` |
-| `rag_search.py` | RAG 검색 엔진 | `python rag_search.py` (테스트 모드) |
+| `manager.sh` | 프로젝트 관리 통합 스크립트 | `./manager.sh [명령어]` |
+| `check_setup.py` | 환경 점검 (9개 항목 검사) | `python check_setup.py` |
+| `show_stats.py` | 시스템 통계 대시보드 | `python show_stats.py [--json]` |
+| `confluence_crawler.py` | Confluence 페이지 크롤러 | `weekly_update.py`에서 호출 |
+| `sync_state.py` | 동기화 상태 관리 | 내부 모듈 |
+| `preprocess_data.py` | 텍스트 전처리 + 청킹 | `python preprocess_data.py` |
+| `build_vectordb.py` | 벡터 DB 구축 | `python build_vectordb.py` |
+| `update_vectordb.py` | 벡터 DB 증분 업데이트 | `python update_vectordb.py` |
+| `rag_search.py` | RAG 검색 엔진 | 내부 모듈 |
 | `app.py` | Gradio 웹 UI | `python app.py` |
 | `weekly_update.py` | 통합 업데이트 파이프라인 | `python weekly_update.py [--full]` |
-| `show_stats.py` | 시스템 통계 대시보드 | `python show_stats.py [--json]` |
-| `docker_manager.sh` | Docker 관리 | `./docker_manager.sh [command]` |
 | `backup.sh` | 데이터 백업 | `./backup.sh` |
 | `restore.sh` | 데이터 복구 | `./restore.sh <백업파일>` |
 
----
+## 프로젝트 구조
 
-## 🔧 문제 해결
+```
+confluence/
+├── .env.template              # 환경변수 템플릿
+├── .env                       # 환경변수 (비공개)
+├── .gitignore                 # Git 제외 목록
+├── requirements.txt           # 운영 의존성
+├── requirements-dev.txt       # 개발 의존성
+├── pytest.ini                 # pytest 설정
+│
+├── manager.sh                 # 프로젝트 관리 스크립트 (통합)
+├── backup.sh                  # 백업 스크립트
+├── restore.sh                 # 복구 스크립트
+│
+├── confluence_crawler.py      # Confluence 크롤러
+├── sync_state.py              # 동기화 상태 관리
+├── preprocess_data.py         # 텍스트 전처리
+├── build_vectordb.py          # 벡터 DB 구축
+├── update_vectordb.py         # 벡터 DB 증분 업데이트
+├── rag_search.py              # RAG 검색 엔진
+├── app.py                     # Gradio 웹 UI
+├── weekly_update.py           # 통합 업데이트 파이프라인
+├── show_stats.py              # 시스템 통계
+├── check_setup.py             # 환경 점검
+│
+├── conftest.py                # pytest 공용 fixture
+├── test_integration.py        # 통합 테스트
+├── tests/                     # 단위 테스트
+│   ├── conftest.py            # 테스트 fixture
+│   ├── test_crawler.py        # 크롤러 테스트
+│   ├── test_preprocessing.py  # 전처리 테스트
+│   ├── test_vectordb.py       # 벡터DB 테스트
+│   └── test_rag.py            # RAG 테스트
+│
+├── confluence_pages/          # 크롤링된 MD 파일 (자동 생성)
+├── confluence_vectordb/       # ChromaDB 데이터 (자동 생성)
+├── logs/                      # 로그 파일 (자동 생성)
+└── backups/                   # 백업 파일 (자동 생성)
+```
+
+## 트러블슈팅
 
 ### Ollama 연결 실패
 
 ```
-❌ Ollama 연결 실패
+Ollama 서버에 연결할 수 없습니다
 ```
 
-**해결 방법:**
+Ollama 서버가 실행 중인지 확인합니다.
+
 ```bash
-# Ollama 서비스 시작
-ollama serve
-
-# 모델 확인
-ollama list
-
-# 모델이 없으면 다운로드
-ollama pull eeve-korean-10.8b
+ollama serve          # 서버 시작
+ollama list           # 설치된 모델 확인
+ollama pull eeve-korean-10.8b  # 모델 다운로드
 ```
 
-### Playwright 브라우저 오류
+### Playwright 브라우저 에러
 
 ```
-BrowserType.launch: Executable doesn't exist
+Executable doesn't exist at ...
 ```
 
-**해결 방법:**
+Chromium 브라우저를 설치합니다.
+
 ```bash
 playwright install chromium
 ```
 
-### 벡터 DB 없음
+### 벡터 DB 구축 중 메모리 부족
 
-```
-❌ 벡터 DB가 존재하지 않습니다
-```
-
-**해결 방법:**
-```bash
-# 전체 파이프라인 실행
-python weekly_update.py --full
-
-# 또는 단계별 실행
-python confluence_crawler.py --full
-python preprocess_data.py
-python build_vectordb.py
-```
-
-### CUDA 메모리 부족
-
-```
-torch.cuda.OutOfMemoryError
-```
-
-**해결 방법:**
-- 자동으로 CPU로 전환됩니다
-- `--batch-size` 줄이기: `python build_vectordb.py --batch-size 50`
-
-### Confluence 로그인 실패
-
-```
-❌ 로그인 시간 초과
-```
-
-**해결 방법:**
-1. `.env`의 `CONFLUENCE_USERNAME`, `CONFLUENCE_PASSWORD` 확인
-2. API 토큰이 만료되지 않았는지 확인
-3. Confluence URL이 정확한지 확인
-
----
-
-## 👨‍💻 개발 가이드
-
-### 프로젝트 구조
-
-```
-confluence/
-├── confluence_crawler.py     # 크롤러 (데이터 수집)
-├── sync_state.py             # 동기화 상태 관리
-├── preprocess_data.py        # 전처리 (청크 분할)
-├── build_vectordb.py         # 벡터 DB 구축
-├── update_vectordb.py        # 벡터 DB 증분 업데이트
-├── rag_search.py             # RAG 검색 엔진
-├── app.py                    # Gradio 웹 UI
-├── weekly_update.py          # 통합 파이프라인
-├── show_stats.py             # 통계 대시보드
-├── docker_manager.sh         # Docker 관리
-├── backup.sh                 # 백업
-├── restore.sh                # 복구
-├── requirements.txt          # 프로덕션 의존성
-├── requirements-dev.txt      # 개발 의존성
-├── .env.template             # 환경변수 템플릿
-├── .gitignore                # Git 제외 파일
-├── .dockerignore             # Docker 제외 파일
-├── Dockerfile                # Docker 이미지
-├── docker-compose.yml        # Docker Compose
-├── README.md                 # 프로젝트 문서
-├── TECHNICAL.md              # 기술 문서
-└── OPERATIONS.md             # 운영 가이드
-```
-
-### 개발 환경 설정
+CUDA OOM 발생 시 자동으로 CPU로 전환됩니다. 배치 크기를 줄여볼 수도 있습니다.
 
 ```bash
-# 개발 의존성 설치
-pip install -r requirements-dev.txt
-
-# 코드 포맷팅
-black .
-
-# 린트 검사
-flake8
-
-# 테스트 실행
-pytest
+python build_vectordb.py --batch-size 50
 ```
 
-### 기여 방법
+### 환경 전체 점검
 
-1. 이슈를 확인하거나 새 이슈를 생성합니다
-2. 기능 브랜치를 생성합니다: `git checkout -b feature/my-feature`
-3. 변경사항을 커밋합니다: `git commit -m "Add my feature"`
-4. 브랜치를 푸시합니다: `git push origin feature/my-feature`
-5. Pull Request를 생성합니다
+모든 환경 요소를 한번에 검사합니다.
 
----
+```bash
+python check_setup.py
+```
 
-## 📄 라이센스
+9개 항목(Python, 가상환경, 패키지, .env, Playwright, Ollama, 디렉토리, 동기화 상태, 포트)을 확인하고 문제 해결 방법을 안내합니다.
 
-이 프로젝트는 내부 사용 목적으로 개발되었습니다.
+### 포트 충돌 (7860)
 
----
+`.env` 파일에서 포트를 변경합니다.
 
-## 🚀 향후 개선사항
+```bash
+GRADIO_SERVER_PORT=7861
+```
 
-- [ ] **API 기반 크롤링**: Playwright 대신 Confluence REST API 활용
-- [ ] **다중 스페이스 지원**: 여러 Confluence 스페이스 동시 크롤링
-- [ ] **검색 로그 분석**: 인기 검색어, 검색 품질 모니터링
-- [ ] **답변 피드백**: 사용자 피드백으로 검색 품질 개선
-- [ ] **Slack 통합**: Slack 봇으로 검색 기능 제공
-- [ ] **다국어 지원**: 영문 문서 검색 최적화
-- [ ] **이미지 처리**: 다이어그램, 스크린샷 내용 인식
-- [ ] **자동 스케줄링**: cron 기반 주기적 업데이트
-- [ ] **클러스터링**: 대규모 문서에 대한 분산 처리
-- [ ] **캐싱 레이어**: 자주 묻는 질문 캐싱으로 응답 속도 개선
+## 향후 개선사항
+
+1. Confluence REST API 직접 활용 (Playwright 대체)
+2. 다중 Space 동시 크롤링
+3. 사용자별 접근 권한 반영
+4. 검색 결과 피드백 수집 및 랭킹 개선
+5. 임베딩 모델 Fine-tuning (도메인 특화)
+6. 검색 히스토리 및 분석 대시보드
+7. Slack/Teams 연동 (챗봇)
+8. 페이지 변경 알림 (Webhook)
+9. 다국어 문서 지원
+10. GPU 가속 최적화 (배치 임베딩)
