@@ -273,3 +273,45 @@ GRADIO_SERVER_PORT=7861
 8. 페이지 변경 알림 (Webhook)
 9. 다국어 문서 지원
 10. GPU 가속 최적화 (배치 임베딩)
+
+
+# 1. 시스템 체크
+python check_setup.py
+
+# 2. 환경 설정 확인
+cat .env
+# 모든 값이 올바르게 설정되었는지 확인
+
+# 3. Ollama 설치 및 실행
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull eeve-korean-10.8b
+
+# Ollama 실행 확인
+ollama list
+curl http://localhost:11434/api/tags
+
+# 4. 동기화 상태 초기화
+python sync_state.py
+
+# 5. 최초 전체 백업 실행
+./manager.sh full-update
+
+# 또는 직접
+python weekly_update.py --full
+
+# 6. 백업 결과 확인
+ls -lh confluence_pages/
+cat last_sync.json
+python show_stats.py
+
+# 7. 웹 UI 시작
+./manager.sh start
+
+# 또는 직접
+python app.py
+
+# 8. 웹 브라우저로 접속
+# http://localhost:7860
+
+# 9. 테스트 검색
+# UI에서 질문 입력: "프로젝트 배포 프로세스는?"
