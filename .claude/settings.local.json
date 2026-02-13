@@ -15,7 +15,8 @@
       "Bash(pkill:*)",
       "Bash(pgrep:*)",
       "Bash(ollama list:*)",
-      "Bash(ollama run:*)"
+      "Bash(ollama run:*)",
+      "Bash(wc:*)"
     ]
   }
 }
