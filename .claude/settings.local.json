@@ -16,7 +16,8 @@
       "Bash(pgrep:*)",
       "Bash(ollama list:*)",
       "Bash(ollama run:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(find:*)"
     ]
   }
 }
