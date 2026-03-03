@@ -25,3 +25,12 @@ logs/
 
 # 백업 디렉토리
 backups/
+
+# 검색 기록 (개인 데이터)
+search_history.json
+
+# 전처리 데이터
+processed_chunks.json
+
+# 서버 PID 파일
+.server.pid

@@ -57,7 +57,13 @@ class ConfluenceCrawler:
         self.base_url = os.getenv("CONFLUENCE_BASE_URL")
         self.username = os.getenv("CONFLUENCE_USERNAME")
         self.password = os.getenv("CONFLUENCE_PASSWORD")
-        self.root_page_url = os.getenv("ROOT_PAGE_URL")
+
+        # 여러 URL 지원: ROOT_PAGE_URLS (콤마 구분) 또는 ROOT_PAGE_URL (하위 호환)
+        root_urls_env = os.getenv("ROOT_PAGE_URLS") or os.getenv("ROOT_PAGE_URL")
+        self.root_page_urls = (
+            [u.strip() for u in root_urls_env.split(",") if u.strip()]
+            if root_urls_env else []
+        )
 
         # 필수 환경변수 검증
         self._validate_config()
@@ -100,9 +106,10 @@ class ConfluenceCrawler:
             "CONFLUENCE_BASE_URL": self.base_url,
             "CONFLUENCE_USERNAME": self.username,
             "CONFLUENCE_PASSWORD": self.password,
-            "ROOT_PAGE_URL": self.root_page_url,
         }
         missing = [key for key, value in required.items() if not value]
+        if not self.root_page_urls:
+            missing.append("ROOT_PAGE_URLS (또는 ROOT_PAGE_URL)")
         if missing:
             console.print(
                 f"[red]오류: 다음 환경변수가 설정되지 않았습니다: {', '.join(missing)}[/red]"
@@ -126,17 +133,23 @@ class ConfluenceCrawler:
 
         try:
             # Confluence 로그인 페이지로 이동
-            login_url = f"{self.base_url}/login"
+            # login_url = f"{self.base_url}/login"
+            login_url = f"{self.base_url}"
             self.page.goto(login_url, timeout=self.PAGE_TIMEOUT)
 
             # 이메일 입력
-            self.page.fill('input[name="username"], input[type="email"]', self.username)
-            self.page.click('button[type="submit"], #login-submit')
-            self.page.wait_for_timeout(2000)
+            # self.page.fill('input[name="username"], input[type="email"]', self.username)
+            # self.page.click('button[type="submit"], #login-submit')
+            # self.page.wait_for_timeout(2000)
+            self.page.fill('input[name="UserName"], input[type="email"]', self.username)
+            # self.page.click('button[type="submit"], #login-submit')
+            # self.page.wait_for_timeout(2000)
 
             # 비밀번호 입력
-            self.page.fill('input[name="password"], input[type="password"]', self.password)
-            self.page.click('button[type="submit"], #login-submit')
+            # self.page.fill('input[name="password"], input[type="password"]', self.password)
+            self.page.fill('input[name="Password"], input[type="password"]', self.password)
+            # self.page.click('button[type="submit"], #login-submit')
+            self.page.click('button[type="submit"], #submit')
 
             # 로그인 완료 대기 (대시보드 또는 위키 메인 페이지)
             self.page.wait_for_load_state("networkidle", timeout=self.PAGE_TIMEOUT)
@@ -346,7 +359,7 @@ class ConfluenceCrawler:
             console.print(f"[red]  콘텐츠 추출 실패: {e}[/red]")
             return ""
 
-    def extract_child_pages(self) -> list[dict]:
+    def extract_child_pages(self, url: str) -> list[dict]:
         """현재 페이지의 하위 페이지 링크 목록 추출
 
         Returns:
@@ -357,12 +370,16 @@ class ConfluenceCrawler:
         try:
             # Confluence 하위 페이지 목록 영역 선택
             # (Children Display 매크로 또는 페이지 트리)
-            child_links = self.page.query_selector_all(
-                ".children-show-hide a, "
-                ".plugin_pagetree_children_container a, "
-                "[data-testid='children-item'] a, "
-                ".childpages-macro a"
-            )
+            # child_links = self.page.query_selector_all(
+            #     ".children-show-hide a, "
+            #     ".plugin_pagetree_children_container a, "
+            #     "[data-testid='children-item'] a, "
+            #     ".childpages-macro a"
+            # )
+            start = url.find('/pages/') + len('/pages/')
+            end = url.find('/', start)
+            _id = url[start:end]
+            child_links = self.page.query_selector_all("children" + _id + "-0 a")
             print("=============================")
             print(child_links)
             print("=============================")
@@ -481,7 +498,7 @@ class ConfluenceCrawler:
             })
 
         # 하위 페이지 크롤링
-        child_pages = self.extract_child_pages()
+        child_pages = self.extract_child_pages(url)
         for child in child_pages:
             self.crawl_page(child["url"], depth=depth + 1)
 
@@ -620,13 +637,13 @@ class ConfluenceCrawler:
             init_sync_state()
 
             # 로그인
-            # self.login()
-            self.playwright = sync_playwright().start()
-            self.browser = self.playwright.chromium.launch(headless=True)
-            self.page = self.browser.new_page()
-            # 루트 페이지부터 재귀 크롤링
-            console.print(f"\n[bold]루트 페이지: {self.root_page_url}[/bold]\n")
-            self.crawl_page(self.root_page_url)
+            self.login()
+
+            # 각 루트 페이지부터 재귀 크롤링
+            console.print(f"\n[bold]크롤링 대상 URL: {len(self.root_page_urls)}개[/bold]")
+            for root_url in self.root_page_urls:
+                console.print(f"\n[bold]루트 페이지: {root_url}[/bold]\n")
+                self.crawl_page(root_url)
 
             # 결과 저장
             console.print("\n[bold blue]결과 저장 중...[/bold blue]")

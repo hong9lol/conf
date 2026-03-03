@@ -57,7 +57,7 @@ vim .env
 
 # Ollama LLM 모델 다운로드
 ollama serve                      # 터미널 1
-ollama pull eeve-korean-10.8b     # 터미널 2
+ollama pull anpigon/eeve-korean-10.8b     # 터미널 2
 
 # 환경 점검
 ./manager.sh check
@@ -104,7 +104,7 @@ ollama pull eeve-korean-10.8b     # 터미널 2
 | `CONFLUENCE_PASSWORD` | API 토큰 또는 비밀번호 | `xxxxxxxxxxx` |
 | `ROOT_PAGE_URL` | 크롤링 시작 페이지 URL | `https://company.atlassian.net/wiki/spaces/TEAM/pages/123456/Root` |
 | `OLLAMA_HOST` | Ollama 서버 주소 | `http://localhost:11434` |
-| `OLLAMA_MODEL` | LLM 모델명 | `eeve-korean-10.8b` |
+| `OLLAMA_MODEL` | LLM 모델명 | `anpigon/eeve-korean-10.8b` |
 | `GRADIO_SERVER_PORT` | 웹 UI 포트 | `7860` |
 | `LOG_LEVEL` | 로그 레벨 | `INFO` |
 
@@ -220,7 +220,7 @@ Ollama 서버가 실행 중인지 확인합니다.
 ```bash
 ollama serve          # 서버 시작
 ollama list           # 설치된 모델 확인
-ollama pull eeve-korean-10.8b  # 모델 다운로드
+ollama pull anpigon/eeve-korean-10.8b  # 모델 다운로드
 ```
 
 ### Playwright 브라우저 에러

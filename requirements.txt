@@ -18,10 +18,10 @@ langchain==0.1.0
 chromadb==0.4.22
 
 # 임베딩 모델 (텍스트를 벡터로 변환)
-sentence-transformers==2.2.2
+sentence-transformers==5.2.3
 
-# 웹 UI (사용자 질의응답 인터페이스)
-gradio==4.16.0
+# 웹 서버 (Flask REST API)
+flask>=3.0.0
 
 # 환경변수 관리 (.env 파일 로드)
 python-dotenv==1.0.0
@@ -30,7 +30,10 @@ python-dotenv==1.0.0
 click==8.1.7
 
 # 진행바 표시 (크롤링/임베딩 진행 상황)
-tqdm==4.66.1
+tqdm==4.66.3
 
 # 터미널 출력 포맷팅 (로그, 테이블 등 예쁜 출력)
 rich==13.7.0
+
+# HTTP 클라이언트 (Ollama 서버 상태 확인)
+requests>=2.31.0

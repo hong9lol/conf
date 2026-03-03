@@ -17,11 +17,11 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 
-from build_vectordb import (
-    DEFAULT_COLLECTION,
-    DEFAULT_PERSIST_DIR,
-    load_embedding_model,
-)
+from config import LLM_MODEL_DEFAULT, VECTORDB_DIR, VECTORDB_COLLECTION
+from build_vectordb import load_embedding_model
+
+DEFAULT_PERSIST_DIR = VECTORDB_DIR
+DEFAULT_COLLECTION = VECTORDB_COLLECTION
 
 load_dotenv()
 
@@ -72,7 +72,7 @@ class ConfluenceRAG:
         """
         self.persist_dir = persist_dir
         self.ollama_host = ollama_host or os.getenv("OLLAMA_HOST", "http://localhost:11434")
-        self.ollama_model = ollama_model or os.getenv("OLLAMA_MODEL", "eeve-korean-10.8b")
+        self.ollama_model = ollama_model or os.getenv("OLLAMA_MODEL", LLM_MODEL_DEFAULT)
 
         # ChromaDB 로드
         self.collection = self._load_vectordb()

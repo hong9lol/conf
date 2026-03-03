@@ -19,12 +19,14 @@ from rich.console import Console
 from rich.table import Table
 from tqdm import tqdm
 
+from config import EMBEDDING_MODEL, VECTORDB_DIR, VECTORDB_COLLECTION
+
 console = Console()
 
-# 기본 설정
-DEFAULT_MODEL = "jhgan/ko-sroberta-multitask"
-DEFAULT_PERSIST_DIR = "./confluence_vectordb"
-DEFAULT_COLLECTION = "confluence_pages"
+# 기본 설정 (config.py에서 가져옴)
+DEFAULT_MODEL = EMBEDDING_MODEL
+DEFAULT_PERSIST_DIR = VECTORDB_DIR
+DEFAULT_COLLECTION = VECTORDB_COLLECTION
 PROGRESS_FILE = Path(".vectordb_progress.json")
 
 

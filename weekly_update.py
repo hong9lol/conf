@@ -179,7 +179,7 @@ def step_check_environment(logger: logging.Logger) -> bool:
         errors.append(".env 파일이 존재하지 않습니다. (.env.template 참고)")
 
     # 필수 환경변수 확인
-    required_vars = ["CONFLUENCE_BASE_URL", "CONFLUENCE_USERNAME", "CONFLUENCE_PASSWORD", "ROOT_PAGE_URL"]
+    required_vars = ["CONFLUENCE_BASE_URL", "CONFLUENCE_USERNAME", "CONFLUENCE_PASSWORD", "ROOT_PAGE_URLS"]
     for var in required_vars:
         if not os.getenv(var):
             errors.append(f"환경변수 미설정: {var}")
