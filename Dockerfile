@@ -36,6 +36,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libasound2 \
     && rm -rf /var/lib/apt/lists/*
 
+# pip SSL 설정 - 프록시의 SSL inspection으로 인한 인증서 검증 오류 방지
+RUN pip config set global.trusted-host "pypi.org files.pythonhosted.org pypi.python.org"
+
 # Python 의존성 설치
 COPY requirements.txt .
 RUN pip install --upgrade pip
