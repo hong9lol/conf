@@ -90,31 +90,31 @@ def _create_backup(logger: logging.Logger) -> dict:
 
     # 동기화 상태 백업
     try:
-        # if SYNC_STATE_FILE.exists():
-        dest = rollback_dir / SYNC_STATE_FILE.name
-        shutil.copy2(SYNC_STATE_FILE, dest)
-        backup_info["files"].append(str(dest))
-        logger.debug(f"백업: {SYNC_STATE_FILE} → {dest}")
+        if SYNC_STATE_FILE.exists():
+            dest = rollback_dir / SYNC_STATE_FILE.name
+            shutil.copy2(SYNC_STATE_FILE, dest)
+            backup_info["files"].append(str(dest))
+            logger.debug(f"백업: {SYNC_STATE_FILE} → {dest}")
     except Exception as e:
         logger.error(f"동기화 상태 백업 실패: {e}")
-    
+
     # 백업 JSON 백업
     try:
-        # if BACKUP_JSON.exists():
-        dest = rollback_dir / BACKUP_JSON.name
-        shutil.copy2(BACKUP_JSON, dest)
-        backup_info["files"].append(str(dest))
-        logger.debug(f"백업: {BACKUP_JSON} → {dest}")
+        if BACKUP_JSON.exists():
+            dest = rollback_dir / BACKUP_JSON.name
+            shutil.copy2(BACKUP_JSON, dest)
+            backup_info["files"].append(str(dest))
+            logger.debug(f"백업: {BACKUP_JSON} → {dest}")
     except Exception as e:
         logger.error(f"백업 JSON 백업 실패: {e}")
 
     # 벡터 DB 디렉토리 백업 (존재 시)
     try:
-    # if VECTORDB_DIR.exists():
-        dest = rollback_dir / "confluence_vectordb"
-        shutil.copytree(VECTORDB_DIR, dest)
-        backup_info["vectordb_backup"] = str(dest)
-        logger.debug(f"백업: {VECTORDB_DIR} → {dest}")
+        if VECTORDB_DIR.exists():
+            dest = rollback_dir / "confluence_vectordb"
+            shutil.copytree(VECTORDB_DIR, dest)
+            backup_info["vectordb_backup"] = str(dest)
+            logger.debug(f"백업: {VECTORDB_DIR} → {dest}")
     except Exception as e:
         logger.error(f"벡터 DB 백업 실패: {e}")
 
