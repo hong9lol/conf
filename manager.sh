@@ -28,6 +28,32 @@ get_server_port() {
     grep -E "^SERVER_PORT=" .env 2>/dev/null | cut -d= -f2 || echo "5000"
 }
 
+get_ollama_model() {
+    grep -E "^OLLAMA_MODEL=" .env 2>/dev/null | cut -d= -f2 || echo "anpigon/eeve-korean-10.8b"
+}
+
+# Ollama 서버 준비 대기 후 모델 pull
+ollama_pull_model() {
+    local model
+    model=$(get_ollama_model)
+
+    info "Ollama 서버 시작 대기 중..."
+    local max_wait=60
+    local waited=0
+    until docker compose exec ollama ollama list &>/dev/null 2>&1; do
+        if [ "${waited}" -ge "${max_wait}" ]; then
+            error "Ollama 서버 시작 시간 초과 (${max_wait}초)"
+            return 1
+        fi
+        sleep 3
+        waited=$((waited + 3))
+    done
+
+    info "모델 다운로드 중: ${model} (용량에 따라 시간이 걸릴 수 있습니다)"
+    docker compose exec ollama ollama pull "${model}"
+    success "모델 준비 완료: ${model}"
+}
+
 require_docker() {
     if ! command -v docker &> /dev/null; then
         error "Docker가 설치되어 있지 않습니다."
@@ -76,6 +102,10 @@ start() {
 
     ensure_data_files
     docker compose ${profile_flag} up -d
+
+    if [[ "${1:-}" == "--with-ollama" ]]; then
+        ollama_pull_model
+    fi
 
     SERVER_PORT=$(get_server_port)
     success "서버 시작 완료"
@@ -297,33 +327,40 @@ show_help() {
     echo ""
     echo "사용법: ./manager.sh [명령어]"
     echo ""
+    echo -e "${BOLD}초기 셋업 (Ollama를 Docker로 실행하는 경우):${NC}"
+    echo "  1. cp .env.template .env        # .env 편집"
+    echo "  2. ./manager.sh build           # Docker 이미지 빌드"
+    echo "  3. ./manager.sh start --with-ollama  # Ollama 시작 + 모델 자동 다운로드"
+    echo "  4. ./manager.sh crawl --full    # Confluence 전체 크롤링"
+    echo "  5. ./manager.sh update --full   # 벡터 DB 전체 구축"
+    echo ""
+    echo -e "${BOLD}초기 셋업 (Ollama가 이미 외부에서 실행 중인 경우):${NC}"
+    echo "  1. cp .env.template .env        # .env의 OLLAMA_HOST 편집"
+    echo "  2. ./manager.sh build           # Docker 이미지 빌드"
+    echo "  3. ./manager.sh crawl --full    # Confluence 전체 크롤링"
+    echo "  4. ./manager.sh update --full   # 벡터 DB 전체 구축"
+    echo "  5. ./manager.sh start           # 앱 서버 시작"
+    echo ""
     echo -e "${BOLD}서비스:${NC}"
-    echo "  build              Docker 이미지 빌드"
-    echo "  start              서버 시작"
-    echo "  start --with-ollama  Ollama 컨테이너 포함 시작"
-    echo "  stop               서버 중지"
-    echo "  restart            서버 재시작"
-    echo "  logs [service]     컨테이너 로그 스트리밍 (기본: app)"
-    echo "  check              상태 확인"
+    echo "  build                  Docker 이미지 빌드"
+    echo "  start                  서버 시작"
+    echo "  start --with-ollama    Ollama 컨테이너 포함 시작 (모델 자동 pull)"
+    echo "  stop                   서버 중지"
+    echo "  restart                서버 재시작"
+    echo "  logs [service]         컨테이너 로그 스트리밍 (기본: app)"
+    echo "  check                  상태 확인"
     echo ""
     echo -e "${BOLD}데이터:${NC}"
-    echo "  crawl              증분 크롤링"
-    echo "  crawl --full       전체 크롤링"
-    echo "  update             증분 업데이트 (크롤링 + 벡터 DB)"
-    echo "  update --full      전체 재구축"
+    echo "  crawl                  증분 크롤링"
+    echo "  crawl --full           전체 크롤링"
+    echo "  update                 증분 업데이트 (크롤링 + 벡터 DB)"
+    echo "  update --full          전체 재구축"
     echo ""
     echo -e "${BOLD}유지보수:${NC}"
-    echo "  backup             데이터 백업"
-    echo "  restore FILE       백업에서 복구"
-    echo "  clean              생성 데이터 전체 삭제"
-    echo "  cleanup            임시 파일 정리 (__pycache__ 등)"
-    echo ""
-    echo -e "${BOLD}일반적인 사용 순서:${NC}"
-    echo "  1. cp .env.template .env  # .env 편집"
-    echo "  2. ./manager.sh build"
-    echo "  3. ./manager.sh crawl --full"
-    echo "  4. ./manager.sh update --full"
-    echo "  5. ./manager.sh start"
+    echo "  backup                 데이터 백업"
+    echo "  restore FILE           백업에서 복구"
+    echo "  clean                  생성 데이터 전체 삭제"
+    echo "  cleanup                임시 파일 정리 (__pycache__ 등)"
 }
 
 # ============================================
