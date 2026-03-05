@@ -149,7 +149,7 @@ class ConfluenceCrawler:
             # self.page.fill('input[name="password"], input[type="password"]', self.password)
             self.page.fill('input[name="Password"], input[type="password"]', self.password)
             # self.page.click('button[type="submit"], #login-submit')
-            self.page.click('button[type="submit"], #submit')
+            self.page.click('#submitButton')
 
             # 로그인 완료 대기 (대시보드 또는 위키 메인 페이지)
             self.page.wait_for_load_state("networkidle", timeout=self.PAGE_TIMEOUT)
@@ -379,7 +379,7 @@ class ConfluenceCrawler:
             start = url.find('/pages/') + len('/pages/')
             end = url.find('/', start)
             _id = url[start:end]
-            child_links = self.page.query_selector_all("children" + _id + "-0 a")
+            child_links = self.page.query_selector_all("#children" + _id + "-0 a")
             print("=============================")
             print(child_links)
             print("=============================")

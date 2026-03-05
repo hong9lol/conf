@@ -2,6 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# 프록시 설정 (docker-compose.yml의 build.args를 통해 전달)
+# apt-get, pip, playwright 다운로드 모두 자동으로 이 값을 사용함
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY=localhost,127.0.0.1,host.docker.internal
+
 # Playwright Chromium 실행에 필요한 시스템 의존성 설치
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
@@ -32,6 +38,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Python 의존성 설치
 COPY requirements.txt .
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Playwright Chromium 브라우저 설치

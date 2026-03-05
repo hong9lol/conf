@@ -1,6 +1,11 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,host.docker.internal}
     container_name: confluence-rag
     ports:
       - "${SERVER_PORT:-5000}:5000"
@@ -17,6 +22,9 @@ services:
       - ./.env:/app/.env
     environment:
       - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,host.docker.internal}
     # Linux에서 host.docker.internal 사용을 위해 필요
     extra_hosts:
       - "host.docker.internal:host-gateway"

@@ -9,13 +9,13 @@ playwright==1.40.0
 beautifulsoup4==4.12.2
 
 # HTML -> Markdown 변환 (문서 정제)
-markdownify==0.11.6
+markdownify==1.2.2
 
 # RAG 프레임워크 (검색 증강 생성 파이프라인)
-langchain==0.1.0
+langchain==1.2.10
 
 # 벡터 데이터베이스 (임베딩 저장 및 유사도 검색)
-chromadb==0.4.22
+chromadb==1.5.2
 
 # 임베딩 모델 (텍스트를 벡터로 변환)
 sentence-transformers==5.2.3
@@ -33,7 +33,7 @@ click==8.1.7
 tqdm==4.66.3
 
 # 터미널 출력 포맷팅 (로그, 테이블 등 예쁜 출력)
-rich==13.7.0
+rich==14.3.3
 
 # HTTP 클라이언트 (Ollama 서버 상태 확인)
 requests>=2.31.0
