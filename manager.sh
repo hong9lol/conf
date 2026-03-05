@@ -35,6 +35,21 @@ require_docker() {
     fi
 }
 
+# Docker 볼륨 마운트 전 JSON 파일 초기화
+# 파일이 없으면 Docker가 디렉토리로 생성하므로 반드시 선행 실행 필요
+ensure_data_files() {
+    for json_file in confluence_backup.json processed_chunks.json; do
+        if [ -d "${SCRIPT_DIR}/${json_file}" ]; then
+            warn "${json_file}이 디렉토리로 존재합니다. 삭제 후 파일로 재생성합니다."
+            rm -rf "${SCRIPT_DIR}/${json_file}"
+        fi
+        if [ ! -f "${SCRIPT_DIR}/${json_file}" ]; then
+            echo "[]" > "${SCRIPT_DIR}/${json_file}"
+            info "${json_file} 초기화"
+        fi
+    done
+}
+
 # ============================================
 # 1. 이미지 빌드
 # ============================================
@@ -59,14 +74,7 @@ start() {
         info "Ollama 컨테이너도 함께 시작합니다."
     fi
 
-    # Docker 볼륨 마운트용 파일 초기화 (없으면 Docker가 디렉토리로 생성)
-    for json_file in confluence_backup.json processed_chunks.json; do
-        if [ ! -f "${SCRIPT_DIR}/${json_file}" ]; then
-            echo "[]" > "${SCRIPT_DIR}/${json_file}"
-            info "${json_file} 초기화"
-        fi
-    done
-
+    ensure_data_files
     docker compose ${profile_flag} up -d
 
     SERVER_PORT=$(get_server_port)
@@ -118,6 +126,7 @@ crawl() {
         info "증분 크롤링 모드로 실행합니다."
     fi
 
+    ensure_data_files
     docker compose run --rm app python confluence_crawler.py ${full_flag}
     success "크롤링 완료"
 }
@@ -140,6 +149,7 @@ update() {
         fi
     fi
 
+    ensure_data_files
     docker compose run --rm app python weekly_update.py ${full_flag}
     success "업데이트 완료"
 }

@@ -13,6 +13,8 @@ markdownify==1.2.2
 
 # RAG 프레임워크 (검색 증강 생성 파이프라인)
 langchain==1.2.10
+langchain-core
+langchain-community
 
 # 벡터 데이터베이스 (임베딩 저장 및 유사도 검색)
 chromadb==1.5.2

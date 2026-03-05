@@ -6,7 +6,7 @@ WORKDIR /app
 # apt-get, pip, playwright 다운로드 모두 자동으로 이 값을 사용함
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
-ARG NO_PROXY=localhost,127.0.0.1,host.docker.internal
+ARG NO_PROXY
 
 # Playwright Chromium 실행에 필요한 시스템 의존성 설치
 RUN apt-get update && apt-get install -y --no-install-recommends \
