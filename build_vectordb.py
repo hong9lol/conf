@@ -42,6 +42,11 @@ def load_embedding_model(model_name: str = DEFAULT_MODEL) -> HuggingFaceEmbeddin
     Returns:
         HuggingFaceEmbeddings 인스턴스
     """
+    import os as _os
+    # 캐시된 모델을 우선 사용 (네트워크 접근 최소화)
+    _os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    _os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
     # 디바이스 자동 감지
     device = "cuda" if torch.cuda.is_available() else "cpu"
     console.print(f"[blue]임베딩 모델 로드 중: {model_name}[/blue]")

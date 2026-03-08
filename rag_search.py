@@ -103,7 +103,16 @@ class ConfluenceRAG:
             path=self.persist_dir,
             settings=Settings(anonymized_telemetry=False),
         )
-        collection = client.get_collection(name=DEFAULT_COLLECTION)
+        try:
+            collection = client.get_collection(name=DEFAULT_COLLECTION)
+        except Exception as e:
+            if "does not exist" in str(e).lower() or "collection" in str(e).lower():
+                console.print(f"[red]오류: 컬렉션 '{DEFAULT_COLLECTION}'이 존재하지 않습니다.[/red]")
+                console.print("[yellow]먼저 build_vectordb.py를 실행해주세요:[/yellow]")
+                console.print("[dim]  1. python preprocess_data.py[/dim]")
+                console.print("[dim]  2. python build_vectordb.py[/dim]")
+                raise FileNotFoundError(f"컬렉션 없음: {DEFAULT_COLLECTION}") from e
+            raise
 
         count = collection.count()
         if count == 0:
